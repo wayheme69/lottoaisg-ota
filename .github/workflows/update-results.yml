@@ -1,0 +1,37 @@
+name: Update 6/49 results
+
+on:
+  schedule:
+    # Tirage 18:30 heure de Singapour (10:30 UTC), parts gagnantes publiées dans la soirée :
+    # passages ciblés 18:40 → 20:40 Singapour, puis un passage toutes les 6 h en filet de sécurité
+    - cron: "10,40 10-12 * * *"
+    - cron: "23 */6 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: results
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Fetch results (official Singapore Pools pages)
+        run: python3 scripts/sg_results.py
+      - name: Commit if changed
+        run: |
+          git config user.name "results-bot"
+          git config user.email "actions@github.com"
+          git add sg_results.json
+          if ! git diff --cached --quiet; then
+            git commit -m "results: $(date -u +%Y-%m-%dT%H:%MZ)"
+            git pull --rebase origin main
+            git push
+          else
+            echo "No change."
+          fi
