@@ -6,6 +6,9 @@ jobs:
     steps:
       - run: |
           UA="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 Safari/605.1.15"
-          for u in https://www.singaporepools.com.sg/en/product/Pages/toto.aspx https://www.singaporepools.com.sg/en/product/Pages/toto_htp.aspx https://www.singaporepools.com.sg/en/product/sr/Pages/toto_results.aspx https://www.singaporepools.com.sg/en/faq/Pages/toto.aspx https://www.singaporepools.com.sg/en/product/Pages/toto_rules.aspx; do
-            echo "=== $u"; curl -sL -A "$UA" "$u" | sed 's/<[^>]*>/ /g' | tr -s ' \t' ' ' | grep -ioE ".{0,160}(sales? (close|closing|will close|end)|close of sales|cut-?off|6\.00 ?pm|6pm|5\.30 ?pm).{0,160}" | head -8
+          curl -sL -A "$UA" https://www.singaporepools.com.sg/en/product/Pages/toto.aspx -o t.html; wc -c t.html
+          grep -oiE 'href="[^"]*(toto|faq|rule|lotter)[^"]*"' t.html | sort -u | head -40
+          for u in https://www.singaporepools.com.sg/en/product/Pages/toto.aspx https://online.singaporepools.com/en/lottery/toto-self-pick https://www.singaporepools.com.sg/en/faq/Pages/default.aspx https://www.singaporepools.com.sg/en/rules/Documents/Lottery%20Rules.pdf; do
+            echo "=== $u"; curl -sL -A "$UA" "$u" -o p.bin; file p.bin | cut -c1-80
+            (pdftotext p.bin - 2>/dev/null || sed 's/<[^>]*>/ /g' p.bin) | tr -s ' \t\r\n' ' ' | grep -ioE ".{0,200}(close|closing|stop|cease|cut).{0,200}" | grep -iE "sale|bet|ticket|pm|draw" | head -8
           done
